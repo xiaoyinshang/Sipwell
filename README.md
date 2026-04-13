@@ -44,33 +44,3 @@ pyinstaller --onefile --windowed sipwell.py
 ```
 
 打包后可执行文件在 `dist/sipwell.exe`。
-
-## Windows 开机自启
-
-如果你已经打包成：
-`E:\xproject\20260413_Sipwell_v1\dist\sipwell.exe`
-
-推荐用 **任务计划程序（Task Scheduler）**，比“启动文件夹”更稳定。
-
-### 方式 A：双击脚本（推荐）
-
-仓库里提供了脚本：
-
-- `startup/install_startup.bat`：创建登录时自启任务
-- `startup/uninstall_startup.bat`：删除自启任务
-
-> 默认路径就是 `E:\xproject\20260413_Sipwell_v1\dist\sipwell.exe`。如果你以后换路径，请先编辑 `install_startup.bat` 顶部的 `EXE_PATH`。
-
-### 方式 B：手动命令行创建
-
-以管理员身份打开 CMD，执行：
-
-```bat
-schtasks /create /tn "SipwellHourlyReminder" /tr "\"E:\xproject\20260413_Sipwell_v1\dist\sipwell.exe\"" /sc onlogon /rl limited /f
-```
-
-删除自启任务：
-
-```bat
-schtasks /delete /tn "SipwellHourlyReminder" /f
-```
