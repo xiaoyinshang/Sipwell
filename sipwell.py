@@ -6,10 +6,11 @@ import tkinter as tk
 from tkinter import messagebox
 
 try:
-    from PIL import Image, ImageTk
+    from PIL import Image, ImageDraw, ImageTk
+    import pystray
 except ImportError as exc:
     raise SystemExit(
-        "未安装 Pillow，请先执行: pip install -r requirements.txt"
+        "缺少依赖，请先执行: pip install -r requirements.txt"
     ) from exc
 
 
@@ -20,10 +21,14 @@ SUPPORTED_EXTENSIONS = {".png", ".jpg", ".jpeg", ".bmp", ".gif", ".webp"}
 
 class SipwellApp:
     def __init__(self) -> None:
+        self.is_quitting = False
+        self.tray_icon: pystray.Icon | None = None
+
         self.root = tk.Tk()
         self.root.title(APP_TITLE)
         self.root.geometry("420x180")
         self.root.resizable(False, False)
+        self.root.protocol("WM_DELETE_WINDOW", self.hide_to_tray)
 
         self.status_var = tk.StringVar(value="正在初始化...")
         self.meme_count_var = tk.StringVar(value="表情包数量: 0")
@@ -45,6 +50,14 @@ class SipwellApp:
         )
         open_dir_btn.pack(pady=(4, 12))
 
+        hide_btn = tk.Button(
+            self.root,
+            text="最小化到后台托盘",
+            command=self.hide_to_tray,
+            width=20,
+        )
+        hide_btn.pack(pady=(0, 10))
+
         self.meme_files = self.load_memes()
         if not self.meme_files:
             messagebox.showwarning(
@@ -53,6 +66,7 @@ class SipwellApp:
             )
 
         self.update_status_for_next_reminder()
+        self.setup_system_tray()
         self.schedule_next_hourly_popup()
 
     def load_memes(self) -> list[Path]:
@@ -101,6 +115,7 @@ class SipwellApp:
         self.schedule_next_hourly_popup()
 
     def show_meme_popup(self, meme_path: Path) -> None:
+        self.show_window()
         popup = tk.Toplevel(self.root)
         popup.title("该喝水啦 💧")
         popup.attributes("-topmost", True)
@@ -135,6 +150,49 @@ class SipwellApp:
         x = (win.winfo_screenwidth() // 2) - (width // 2)
         y = (win.winfo_screenheight() // 2) - (height // 2)
         win.geometry(f"{width}x{height}+{x}+{y}")
+
+    def create_tray_icon_image(self) -> Image.Image:
+        size = 64
+        image = Image.new("RGBA", (size, size), (58, 134, 255, 255))
+        draw = ImageDraw.Draw(image)
+        draw.ellipse((14, 8, 50, 44), fill=(255, 255, 255, 255))
+        draw.rectangle((22, 36, 42, 56), fill=(255, 255, 255, 255))
+        return image
+
+    def setup_system_tray(self) -> None:
+        icon_image = self.create_tray_icon_image()
+        menu = pystray.Menu(
+            pystray.MenuItem("显示主窗口", self.on_tray_show),
+            pystray.MenuItem("立即喝水提醒", self.on_tray_test_reminder),
+            pystray.MenuItem("退出", self.on_tray_quit),
+        )
+        self.tray_icon = pystray.Icon("sipwell", icon_image, APP_TITLE, menu)
+        self.tray_icon.run_detached()
+
+    def on_tray_show(self, icon: pystray.Icon, item: pystray.MenuItem) -> None:
+        self.root.after(0, self.show_window)
+
+    def on_tray_test_reminder(self, icon: pystray.Icon, item: pystray.MenuItem) -> None:
+        self.root.after(0, self.hourly_reminder)
+
+    def on_tray_quit(self, icon: pystray.Icon, item: pystray.MenuItem) -> None:
+        self.root.after(0, self.quit_app)
+
+    def hide_to_tray(self) -> None:
+        self.root.withdraw()
+        if self.tray_icon:
+            self.tray_icon.notify("Sipwell 已在后台运行", "应用已最小化到系统托盘，整点会继续提醒你喝水。")
+
+    def show_window(self) -> None:
+        self.root.deiconify()
+        self.root.lift()
+        self.root.focus_force()
+
+    def quit_app(self) -> None:
+        self.is_quitting = True
+        if self.tray_icon:
+            self.tray_icon.stop()
+        self.root.destroy()
 
     def run(self) -> None:
         self.root.mainloop()
