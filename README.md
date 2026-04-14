@@ -120,52 +120,6 @@ Sipwell/
 └── .gitignore         # Git 忽略规则
 ```
 
-## 上传到 GitHub
-
-### 初始化仓库
-
-```bash
-# 在项目根目录执行
-git init
-```
-
-### 添加文件
-
-```bash
-git add .gitignore
-git add LICENSE
-git add README.md
-git add DESIGN.md
-git add README_FONT.md
-git add requirements.txt
-git add sipwell.py
-git add memes/.gitkeep
-```
-
-### 提交代码
-
-```bash
-git commit -m "Initial commit: Sipwell 喝水提醒应用 v1.0"
-```
-
-### 推送到 GitHub
-
-```bash
-# 在 GitHub 创建仓库后执行
-git remote add origin https://github.com/yourusername/Sipwell.git
-git branch -M main
-git push -u origin main
-```
-
-### 关于表情包
-
-本项目默认不包含表情包图片。如果你想在仓库中提供示例：
-
-1. 将表情包放入 `memes/` 目录
-2. 确保你有使用授权（建议使用原创或 CC0 授权图片）
-3. 执行 `git add memes/图片名.jpg`
-4. 重新提交推送
-
 ## 技术栈
 
 - **GUI**: Tkinter + Pillow
